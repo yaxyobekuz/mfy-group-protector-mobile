@@ -46,3 +46,9 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Google OAuth sirlari — loyihada SAQLANMAYDI.
+# ⚠️ Ilovaga faqat WEB client_id kerak (`--dart-define`), sir EMAS:
+# mobil ilova "public client" va sirni yashira olmaydi — APK ichidagi
+# har qanday qiymatni ochib o'qish mumkin.
+client_secret_*.json
