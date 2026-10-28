@@ -47,20 +47,14 @@ export const isLocale = (value: unknown): value is Locale =>
   typeof value === "string" && (LOCALES as readonly string[]).includes(value);
 
 /**
- * TELEGRAM TILIDAN TAXMIN.
+ * ⚠️ TELEGRAM TILIDAN TAXMIN QILINMAYDI va bu ATAYLAB.
  *
- * ⚠️ FAQAT BIRINCHI OCHISHDA: foydalanuvchi tilni QO'LDA tanlagan
- * bo'lsa, Telegram sozlamasi uni bosib ketmasligi kerak.
+ * Avval `guessLocale()` bor edi: Telegram `ru` bersa, ilova rus
+ * tilida ochilardi. Lekin ilova AUDITORIYASI o'zbek tilida va
+ * Telegram interfeysi ko'pincha rus tilida qoldirilgan bo'ladi —
+ * ya'ni taxmin aksariyat fuqaroga NOTO'G'RI til ochardi va buni
+ * ular Profil → Til orqali har safar tuzatishga majbur bo'lardi.
  *
- * ⚠️ KIRILL AVTOMATIK TANLANMAYDI: Telegram `uz` kodini beradi va
- * yozuvni ajratmaydi. Shuning uchun lotin — zahira qiymat, kirill
- * esa faqat qo'lda tanlanadi.
+ * Endi birinchi ochishda HAR DOIM `uz`. Boshqa til — fuqaroning
+ * O'Z tanlovi va u qurilmada saqlanadi.
  */
-export const guessLocale = (languageCode?: string | null): Locale => {
-  if (!languageCode) return DEFAULT_LOCALE;
-
-  const code = languageCode.toLowerCase().slice(0, 2);
-  if (code === "ru") return "ru";
-  if (code === "en") return "en";
-  return DEFAULT_LOCALE;
-};

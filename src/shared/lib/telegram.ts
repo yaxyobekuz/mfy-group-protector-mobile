@@ -20,15 +20,7 @@
 /** Faqat bizga kerak bo'lgan qism. */
 interface TelegramWebApp {
   initData: string;
-  /**
-   * ⚠️ `language_code` — TELEGRAM INTERFEYSI tili ("uz", "ru"),
-   * fuqaro TANLAGAN til emas. Faqat BIRINCHI ochishda zahira
-   * sifatida ishlatiladi (`i18n.tsx`): keyin tanlov qurilmada
-   * saqlanadi va bu qiymat uni bosib ketmasligi kerak.
-   */
-  initDataUnsafe?: {
-    user?: { id: number; first_name: string; language_code?: string };
-  };
+  initDataUnsafe?: { user?: { id: number; first_name: string } };
   colorScheme?: "light" | "dark";
   themeParams?: Record<string, string>;
   viewportStableHeight?: number;

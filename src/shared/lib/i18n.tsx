@@ -3,6 +3,9 @@
 /**
  * TIL — TANLOV VA MATN OLISH.
  *
+ * ⚠️ STANDART TIL — O'ZBEKCHA (LOTIN). Telegram sozlamasidan
+ * taxmin qilinmaydi: sabab `locales.ts` da.
+ *
  * ⚠️ TIL `localStorage` DA, SERVERDA EMAS (`locales.ts` izohi).
  *
  * ⚠️ BIRINCHI RENDER HAR DOIM STANDART TIL BILAN: saqlangan til
@@ -12,8 +15,6 @@
  * mijoz HTML'i mos kelmay, React HIDRATATSIYA XATOSI berardi va
  * ekran bo'sh qolardi.
  *
- * ⚠️ TELEGRAM TILI FAQAT ZAHIRA: saqlangan tanlov bo'lsa, u ustun
- * turadi (`locales.ts#guessLocale` izohi).
  */
 
 import {
@@ -33,7 +34,6 @@ import {
 import {
   DEFAULT_LOCALE,
   LOCALE_DEFS,
-  guessLocale,
   isLocale,
   type Locale,
 } from "@/shared/config/locales";
@@ -71,17 +71,13 @@ const readStored = (): Locale | null => {
 export const LocaleProvider = ({ children }: { children: ReactNode }) => {
   const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
 
+  /**
+   * ⚠️ SAQLANGAN TANLOV BO'LMASA — STANDART TIL (`uz`) QOLADI.
+   * Telegram tilidan taxmin QILINMAYDI (`locales.ts` izohi).
+   */
   useEffect(() => {
     const stored = readStored();
-
-    if (stored) {
-      setLocaleState(stored);
-      return;
-    }
-
-    // Saqlangan tanlov yo'q — Telegram tilidan taxmin qilamiz.
-    const code = window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code;
-    setLocaleState(guessLocale(code));
+    if (stored) setLocaleState(stored);
   }, []);
 
   /**
