@@ -290,3 +290,75 @@ void showToast(BuildContext context, String message, {bool error = false}) {
       ),
     );
 }
+
+/// ILOVA BELGISI — qalqon + joy nuqtasi.
+///
+/// ⚠️ LAUNCHER BELGISI BILAN AYNI SHAKL (`tool/make_icons.py`).
+/// Avval bu yerda `Icons.campaign` (karnay) turardi va ilova
+/// ichidagi belgi telefon ekranidagi belgidan butunlay boshqacha
+/// edi — foydalanuvchi uchun bu "boshqa ilova" degan taassurot
+/// qoldirardi.
+///
+/// ⚠️ RASM EMAS, CHIZMA: PNG qo'shilsa, u yana bir nusxa bo'lardi
+/// va belgi o'zgarganda ikkisidan biri eskirib qolardi. Bu yerda
+/// shakl KOD bilan chiziladi — har doim bir xil.
+class AppLogo extends StatelessWidget {
+  const AppLogo({super.key, this.size = 56, this.color});
+
+  final double size;
+
+  /// Qalqon rangi (standart — brend ko'ki).
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: size,
+    height: size,
+    child: CustomPaint(painter: _LogoPainter(color ?? AppColors.primary)),
+  );
+}
+
+class _LogoPainter extends CustomPainter {
+  _LogoPainter(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final paint = Paint()..color = color..isAntiAlias = true;
+
+    // ── Qalqon ──────────────────────────────────────────────
+    final path = Path();
+    final left = w * 0.14, right = w * 0.86;
+    final top = w * 0.10, bottom = w * 0.93;
+    final shoulder = top + (bottom - top) * 0.50;
+
+    path.moveTo(left, top);
+    path.lineTo(right, top);
+    path.lineTo(right, shoulder);
+    // Pastki egri qirralar — belgi "uy" ga o'xshab qolmasligi uchun.
+    path.quadraticBezierTo(right, bottom - w * 0.06, w / 2, bottom);
+    path.quadraticBezierTo(left, bottom - w * 0.06, left, shoulder);
+    path.close();
+    canvas.drawPath(path, paint);
+
+    // ── Joy nuqtasi (oq, qalqon ichida) ─────────────────────
+    final hole = Paint()..color = Colors.white..isAntiAlias = true;
+    final pr = w * 0.155;
+    final pcy = top + (bottom - top) * 0.36;
+    canvas.drawCircle(Offset(w / 2, pcy), pr, hole);
+
+    final tip = Path()
+      ..moveTo(w / 2 - pr * 0.72, pcy + pr * 0.62)
+      ..lineTo(w / 2 + pr * 0.72, pcy + pr * 0.62)
+      ..lineTo(w / 2, pcy + pr * 2.25)
+      ..close();
+    canvas.drawPath(tip, hole);
+
+    // Halqa teshigi — qalqon rangida.
+    canvas.drawCircle(Offset(w / 2, pcy), pr * 0.38, paint);
+  }
+
+  @override
+  bool shouldRepaint(_LogoPainter old) => old.color != color;
+}

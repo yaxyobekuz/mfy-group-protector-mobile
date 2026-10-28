@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 
 import '../../shared/config/env.dart';
 import '../../shared/config/theme.dart';
+import '../../shared/ui/widgets.dart';
 import 'session.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -28,6 +29,10 @@ class LoginScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // ⚠️ LAUNCHER BELGISI BILAN AYNI SHAKL: avval bu
+                // yerda karnay (`Icons.campaign`) turardi va u
+                // telefon ekranidagi belgidan butunlay boshqacha
+                // edi.
                 Container(
                   width: 88,
                   height: 88,
@@ -35,11 +40,7 @@ class LoginScreen extends StatelessWidget {
                     color: AppColors.accent,
                     borderRadius: BorderRadius.circular(26),
                   ),
-                  child: const Icon(
-                    Icons.campaign_outlined,
-                    size: 44,
-                    color: AppColors.primary,
-                  ),
+                  child: const Center(child: AppLogo(size: 48)),
                 ),
                 const SizedBox(height: 26),
                 const Text(
