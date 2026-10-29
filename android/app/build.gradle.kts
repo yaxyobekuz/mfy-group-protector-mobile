@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -49,11 +51,33 @@ android {
         versionName = flutter.versionName
     }
 
+    // ⚠️ UPLOAD KALITI `android/key.properties` DAN O'QILADI va u
+    // loyihada SAQLANMAYDI (.gitignore). Kalit yo'qolsa Play'ga
+    // yangilanish yuklab bo'lmaydi — faqat Play Console orqali
+    // "upload key reset" so'rash mumkin (bir necha kun).
+    val keystoreProperties = Properties().apply {
+        val file = rootProject.file("key.properties")
+        if (file.exists()) file.inputStream().use { load(it) }
+    }
+
+    signingConfigs {
+        if (keystoreProperties.isNotEmpty()) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // ⚠️ `key.properties` bo'lmasa debug kalit bilan imzolanadi —
+            // `flutter run --release` ishlashi uchun. Bunday AAB'ni
+            // Play Console O'ZI rad etadi ("debug mode da imzolangan").
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug")
         }
     }
 }

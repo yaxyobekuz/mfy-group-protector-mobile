@@ -52,3 +52,9 @@ app.*.map.json
 # mobil ilova "public client" va sirni yashira olmaydi — APK ichidagi
 # har qanday qiymatni ochib o'qish mumkin.
 client_secret_*.json
+
+# Android release imzosi — loyihada SAQLANMAYDI.
+# ⚠️ Kalit va parollar zaxirasini alohida xavfsiz joyda saqlang.
+/android/key.properties
+*.jks
+*.keystore
