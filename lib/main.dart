@@ -30,7 +30,7 @@ class ViloyatShtabiApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'Viloyat shtabi',
+    title: 'Nazoratchi AI',
     debugShowCheckedModeBanner: false,
     theme: buildAppTheme(),
     // ⚠️ MATN O'LCHAMI CHEGARALANADI: tizimda "juda katta shrift"

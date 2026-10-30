@@ -44,7 +44,7 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 26),
                 const Text(
-                  'Viloyat shtabi',
+                  'Nazoratchi AI',
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 10),
