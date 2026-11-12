@@ -100,6 +100,8 @@ class CitizenProfile {
     required this.points,
     this.createdAt,
     required this.stats,
+    this.requirePhone = true,
+    this.phoneNeeded = false,
   });
 
   final String id;
@@ -117,9 +119,29 @@ class CitizenProfile {
   final String? createdAt;
   final CitizenStats stats;
 
+  /// ── TELEFON MAJBURIYMI ───────────────────────────────
+  ///
+  /// ⚠️ QIYMAT SERVERDAN KELADI (`Settings.requirePhone`), ilovada
+  /// QOTIB QOLMAYDI: sozlama panelda o'zgarsa, do'kondagi ilovani
+  /// yangilash kerak bo'lmasligi kerak — va eski versiyalar
+  /// do'konda uzoq turadi.
+  ///
+  /// ⚠️ STANDART `true`: maydon javobda bo'lmasa (eski server),
+  /// talab O'CHIB qolmasligi kerak.
+  final bool requirePhone;
+
+  /// ⚠️ Tayyor javob: "hozir, shu fuqarodan raqam so'rash
+  /// kerakmi". Ilovada hisoblanmaydi — server aytadi.
+  final bool phoneNeeded;
+
   /// ⚠️ TUMAN VA MFY IKKALASI HAM KERAK — murojaat aniq MFY ga
   /// yo'nalishi uchun. Bittasi bo'lsa onboarding yopilmaydi.
   bool get hasTerritory => districtId != null && mahallaId != null;
+
+  /// ⚠️ ONBOARDING SHARTI: hudud VA telefon. Ikkisi bitta
+  /// ekranda so'raladi — ketma-ket ikki to'siq qo'yish fuqaroni
+  /// ilovadan qaytarardi.
+  bool get needsOnboarding => !hasTerritory || phoneNeeded;
 
   String get fullName => lastName == null ? firstName : '$firstName $lastName';
 
@@ -138,6 +160,10 @@ class CitizenProfile {
     points: _int(j['points']),
     createdAt: _str(j['createdAt']),
     stats: CitizenStats.fromJson(j['stats'] as Map<String, dynamic>?),
+    // ⚠️ MAYDON YO'Q BO'LSA `true`: eski server bilan ishlaganda
+    // talab jimgina o'chib qolmasligi kerak.
+    requirePhone: j['requirePhone'] == null || j['requirePhone'] == true,
+    phoneNeeded: _bool(j['phoneNeeded']),
   );
 }
 
@@ -150,6 +176,9 @@ class Category {
     this.icon,
     required this.slaHours,
     this.orgName,
+    this.parentId,
+    this.hasChildren = false,
+    this.selectable = true,
   });
 
   final String id;
@@ -160,6 +189,23 @@ class Category {
   final int slaHours;
   final String? orgName;
 
+  /// ── IKKI DARAJALI RO'YXAT ────────────────────────────────────────
+  ///
+  /// ⚠️ `parentId` — ASOSIY yo'nalish id'si (`null` — o'zi asosiy).
+  /// Daraxt serverda qurilmaydi: mijozlar uni turlicha ko'rsatadi
+  /// (bot — ikki qadamli tugma, ilova — guruhlangan to'r).
+  final String? parentId;
+
+  /// ⚠️ Ichida kichik yo'nalishlari bor — SARLAVHA, tanlov emas.
+  final bool hasChildren;
+
+  /// ⚠️ `false` — YAKUNIY TANLOV BO'LA OLMAYDI (server rad etadi).
+  ///
+  /// ⚠️ STANDART `true`: maydon javobda bo'lmasa (eski server),
+  /// ro'yxat bo'shab qolmasligi kerak — do'kondagi ilova eski
+  /// server bilan ham ishlashi mumkin.
+  final bool selectable;
+
   factory Category.fromJson(Map<String, dynamic> j) => Category(
     id: j['id'] as String,
     name: j['name'] as String? ?? '',
@@ -168,6 +214,9 @@ class Category {
     icon: _str(j['icon']),
     slaHours: _int(j['slaHours']),
     orgName: _str(j['orgName']),
+    parentId: _str(j['parentId']),
+    hasChildren: _bool(j['hasChildren']),
+    selectable: j['selectable'] == null || j['selectable'] == true,
   );
 }
 
@@ -482,6 +531,8 @@ class AiSuggestion {
     required this.priority,
     required this.slaHours,
     this.orgName,
+    this.parentName,
+    this.urgencyLabel,
   });
 
   final String categoryId;
@@ -492,6 +543,19 @@ class AiSuggestion {
   final int slaHours;
   final String? orgName;
 
+  /// ⚠️ ASOSIY YO'NALISH NOMI — "Kommunal xizmatlar → Ichimlik suvi".
+  /// Yakka "Ichimlik suvi" degan taklif kontekstsiz qolardi.
+  final String? parentName;
+
+  /// ⚠️ AI MATNDAN CHIQARGAN SHOSHILINCHLIK BAHOSI — KO'RSATILADI,
+  /// LEKIN MUDDATNI BELGILAMAYDI: muddat yo'nalish SLA'si yoki MFY
+  /// qoidasidan chiqadi va tavsifni panelda XODIM qo'llaydi.
+  final String? urgencyLabel;
+
+  /// Ko'rsatish uchun to'liq nom.
+  String get fullName =>
+      parentName == null ? categoryName : '$parentName → $categoryName';
+
   factory AiSuggestion.fromJson(Map<String, dynamic> j) => AiSuggestion(
     categoryId: j['categoryId'] as String? ?? '',
     categoryName: j['categoryName'] as String? ?? '',
@@ -500,6 +564,8 @@ class AiSuggestion {
     priority: j['priority'] as String? ?? 'normal',
     slaHours: _int(j['slaHours']),
     orgName: _str(j['orgName']),
+    parentName: _str(j['parentName']),
+    urgencyLabel: _str(j['urgencyLabel']),
   );
 }
 
@@ -543,6 +609,30 @@ class MapPoint {
   );
 }
 
+/// E'LONGA QO'SHILGAN FAYL.
+///
+/// ⚠️ `Attachment` QAYTA ISHLATILMADI: unda `id` MAJBURIY
+/// (`j['id'] as String`) va fuqaroga beriladigan e'lon javobida
+/// u YO'Q — ya'ni `Attachment.fromJson` tip xatosi bilan
+/// yiqilardi. Dalil fayllarida `id` kerak (izohda havola
+/// qilinadi), e'lon suratida esa kerak emas.
+///
+/// ⚠️ `coverUrl` NING O'RNINI BOSMAYDI: muqova — ro'yxatdagi
+/// BITTA surat, media esa e'lon ICHIDAGI galereya.
+class NewsMedia {
+  const NewsMedia({required this.kind, required this.url, required this.mimeType});
+
+  final String kind;
+  final String url;
+  final String mimeType;
+
+  factory NewsMedia.fromJson(Map<String, dynamic> j) => NewsMedia(
+    kind: j['kind'] as String? ?? 'photo',
+    url: j['url'] as String? ?? '',
+    mimeType: j['mimeType'] as String? ?? '',
+  );
+}
+
 class NewsItem {
   const NewsItem({
     required this.id,
@@ -553,6 +643,7 @@ class NewsItem {
     this.publishedAt,
     required this.viewCount,
     this.districtName,
+    this.media = const [],
   });
 
   final String id;
@@ -564,6 +655,11 @@ class NewsItem {
   final int viewCount;
   final String? districtName;
 
+  /// ⚠️ STANDART — BO'SH RO'YXAT, `null` EMAS: do'kondagi eski
+  /// ilova yangi server bilan ishlaganda maydon kelmasligi
+  /// mumkin va `null` tekshiruvi har joyda takrorlanardi.
+  final List<NewsMedia> media;
+
   factory NewsItem.fromJson(Map<String, dynamic> j) => NewsItem(
     id: j['id'] as String,
     title: j['title'] as String? ?? '',
@@ -573,6 +669,12 @@ class NewsItem {
     publishedAt: _str(j['publishedAt']),
     viewCount: _int(j['viewCount']),
     districtName: _str(j['districtName']),
+    // ⚠️ MAYDON KELMASA BO'SH RO'YXAT: eski e'lonlarda u yo'q
+    // va `as List` to'g'ridan-to'g'ri yozilsa, ilova ochilishida
+    // yiqilardi.
+    media: (j['media'] as List<dynamic>? ?? [])
+        .map((e) => NewsMedia.fromJson(e as Map<String, dynamic>))
+        .toList(),
   );
 }
 

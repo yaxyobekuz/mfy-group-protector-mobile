@@ -1,8 +1,18 @@
-/// BIRINCHI KIRISH — HUDUD TANLASH.
+/// BIRINCHI KIRISH — HUDUD VA TELEFON.
 ///
 /// ⚠️ MAJBURIY VA O'TKAZIB BO'LMAYDI. Hududsiz murojaat qaysi MFY
 /// ga tushishini tizim bilmaydi va u "egasiz" navbatda qolardi.
 /// Keyin so'ralsa, fuqaro uni har safar o'tkazib yuborardi.
+///
+/// ⚠️ TELEFON HAM SHU YERDA, ALOHIDA EKRANDA EMAS: ketma-ket ikki
+/// to'siq qo'yish fuqaroni ilovadan qaytarardi. Sabab esa AYNI —
+/// telefonsiz murojaatda xodim odamga bog'lana olmaydi va murojaat
+/// navbatda turib qoladi (server uni `create` da RAD ETADI).
+///
+/// ⚠️ TELEFON TALABI SERVERDAN KELADI (`profile.phoneNeeded`): u
+/// sozlama (`Settings.requirePhone`) va panelda o'chirilishi mumkin.
+/// Ilovada qotib qolsa, do'kondagi eski versiya baribir so'rab
+/// turardi — do'kondagi versiyalar esa uzoq yashaydi.
 ///
 /// ⚠️ IKKALASI HAM TALAB QILINADI (tuman VA MFY): `AuthGate`
 /// shartidan chiqish aynan shunda.
@@ -27,12 +37,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   late Future<Territory> _future;
   String? _districtId;
   String? _mahallaId;
+  final TextEditingController _phone = TextEditingController();
   bool _saving = false;
+
+  /// ⚠️ TALAB SESSIYADAN O'QILADI, ilovada HISOBLANMAYDI: u
+  /// `Settings.requirePhone` sozlamasiga bog'liq.
+  bool get _needsPhone =>
+      SessionController.instance.profile?.phoneNeeded ?? false;
+
+  /// ⚠️ ENG QO'POL FILTR — HAQIQIY TEKSHIRUV SERVERDA
+  /// (`common/phone.ts`). Ikkinchi to'liq nusxa yozilsa, ikkisi
+  /// albatta ajralib ketardi: ilova qabul qilgan raqam serverda rad
+  /// etilib, fuqaro sababini bilmay qolardi.
+  bool get _phoneOk =>
+      !_needsPhone ||
+      _phone.text.replaceAll(RegExp(r'[^0-9]'), '').length >= 9;
 
   @override
   void initState() {
     super.initState();
+
+    // ⚠️ MAVJUD QIYMATLAR OLDINDAN QO'YILADI. Bu ekran endi FAQAT
+    // hudud uchun emas: telefon qo'shilgach, hududi ALLAQACHON bor
+    // fuqaro ham bu yerga tushadi. Maydonlar bo'sh qolsa, u tumanini
+    // va MFY sini QAYTA tanlashga majbur bo'lardi — va "Davom etish"
+    // tugmasi o'chiq turardi.
+    final profile = SessionController.instance.profile;
+    _districtId = profile?.districtId;
+    _mahallaId = profile?.mahallaId;
+    _phone.text = profile?.phone ?? '';
+
     _load();
+  }
+
+  @override
+  void dispose() {
+    _phone.dispose();
+    super.dispose();
   }
 
   void _load() {
@@ -42,13 +83,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _save() async {
-    if (_districtId == null || _mahallaId == null) return;
+    if (_districtId == null || _mahallaId == null || !_phoneOk) return;
     setState(() => _saving = true);
 
     try {
       await ApiClient.patch('/mobile/me', {
         'districtId': _districtId,
         'mahallaId': _mahallaId,
+        // ⚠️ FAQAT YOZILGAN BO'LSA YUBORILADI: bo'sh satr serverda
+        // "raqamni o'chirish" deb tushunilardi va telefon majburiy
+        // bo'lganda butun so'rov rad etilardi.
+        if (_phone.text.trim().isNotEmpty) 'phone': _phone.text.trim(),
       });
       // ⚠️ SESSIYA QAYTA O'QILADI: `AuthGate` shu ma'lumotga qarab
       // ekranni almashtiradi. Mahalliy holatni o'zgartirish bilan
@@ -89,10 +134,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Murojaatingiz to\'g\'ri mahallaga yetib borishi uchun '
-                    'hududingizni tanlang.',
-                    style: TextStyle(
+                  Text(
+                    _needsPhone
+                        ? 'Murojaatingiz to\'g\'ri mahallaga yetib borishi '
+                              'uchun hududingizni tanlang va telefon '
+                              'raqamingizni kiriting.'
+                        : 'Murojaatingiz to\'g\'ri mahallaga yetib borishi '
+                              'uchun hududingizni tanlang.',
+                    style: const TextStyle(
                       color: AppColors.mutedForeground,
                       height: 1.5,
                     ),
@@ -152,10 +201,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         : (value) => setState(() => _mahallaId = value),
                   ),
 
+                  // ── TELEFON ─────────────────────────────────────
+                  //
+                  // ⚠️ FAQAT TALAB QILINGANDA KO'RSATILADI: raqami bor
+                  // fuqaro hududini o'zgartirmoqchi bo'lganda ortiqcha
+                  // maydon ko'rishi shart emas.
+                  if (_needsPhone) ...[
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Telefon raqamingiz',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _phone,
+                      keyboardType: TextInputType.phone,
+                      autofillHints: const <String>[
+                        AutofillHints.telephoneNumber,
+                      ],
+                      decoration: const InputDecoration(
+                        hintText: '+998 90 123 45 67',
+                      ),
+                      // ⚠️ `setState` HAR HARFDA: tugmaning yoqilgan
+                      // holati raqam uzunligiga bog'liq va usiz u
+                      // o'chiq turardi.
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Murojaatingiz bo\'yicha xodim siz bilan shu raqam '
+                      'orqali bog\'lanadi.',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: AppColors.mutedForeground,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 32),
                   FilledButton(
                     onPressed:
-                        _saving || _districtId == null || _mahallaId == null
+                        _saving ||
+                            _districtId == null ||
+                            _mahallaId == null ||
+                            !_phoneOk
                         ? null
                         : _save,
                     child: _saving

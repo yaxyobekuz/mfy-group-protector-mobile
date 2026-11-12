@@ -416,66 +416,151 @@ class _CategoryStep extends StatelessWidget {
   final String? selected;
   final void Function(String id) onSelect;
 
+  /// ── GURUHLANGAN RO'YXAT ───────────────────────────────────────────
+  ///
+  /// ⚠️ ICHIDA KICHIK YO'NALISHLARI BOR YO'NALISH KARTA BO'LIB
+  /// CHIQMAYDI — u faqat SARLAVHA. Tanlansa, bo'linishning ma'nosi
+  /// yo'qolardi: hisobotda yana bitta katta uyum paydo bo'lardi
+  /// ("Kommunal xizmatlar — 400 ta") va "qaysi xizmat buzuq" degan
+  /// savol javobsiz qolardi. Server ham bunday tanlovni rad etadi.
+  ///
+  /// ⚠️ IKKI QADAMLI EKRAN QILINMADI (botdagidan farqli): bu yerda
+  /// ro'yxat aylantirib ko'riladi va qo'shimcha qadam fuqaroni
+  /// keraksiz bosishga majbur qilardi.
+  ///
+  /// ⚠️ BOLASI YO'Q ASOSIY YO'NALISHLAR OXIRIDA, BITTA BO'LIMDA: har
+  /// biriga alohida sarlavha ochish ekranni bo'sh sarlavhalar bilan
+  /// to'ldirardi.
+  List<_CategoryGroup> _group(List<Category> all) {
+    final roots = all.where((c) => c.parentId == null).toList();
+    final groups = <_CategoryGroup>[];
+
+    for (final root in roots) {
+      final children = all.where((c) => c.parentId == root.id).toList();
+      if (children.isNotEmpty) {
+        groups.add(_CategoryGroup(title: root.name, items: children));
+      }
+    }
+
+    final standalone = roots.where((c) => !c.hasChildren).toList();
+    if (standalone.isNotEmpty) {
+      groups.add(
+        _CategoryGroup(
+          title: groups.isEmpty ? null : 'Boshqa yo\'nalishlar',
+          items: standalone,
+        ),
+      );
+    }
+
+    return groups;
+  }
+
   @override
   Widget build(BuildContext context) => AsyncView<List<Category>>(
     future: future,
     loadingLabel: 'Yo\'nalishlar yuklanmoqda…',
-    builder: (context, categories) => GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.45,
-      ),
-      itemCount: categories.length,
-      itemBuilder: (context, index) {
-        final category = categories[index];
-        final active = category.id == selected;
-        final color = colorOf(category.color);
+    builder: (context, categories) {
+      final groups = _group(categories);
 
-        return GestureDetector(
-          onTap: () => onSelect(category.id),
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: active ? AppColors.primary : AppColors.border,
-                width: active ? 2 : 1,
-              ),
-              boxShadow: active ? cardShadow : null,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(iconOf(category.icon), color: color, size: 26),
-                const Spacer(),
-                Text(
-                  category.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  slaText(category.slaHours),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.mutedForeground,
+      return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+        itemCount: groups.length,
+        itemBuilder: (context, groupIndex) {
+          final group = groups[groupIndex];
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (group.title != null) ...[
+                if (groupIndex > 0) const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(
+                    group.title!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.mutedForeground,
+                    ),
                   ),
                 ),
               ],
-            ),
-          ),
-        );
-      },
-    ),
+              GridView.builder(
+                // ⚠️ `shrinkWrap` + `NeverScrollable`: to'r tashqi
+                // ro'yxat ICHIDA va o'z aylantirishiga ega bo'lsa,
+                // ikki aylantirish bir-biri bilan urishardi.
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.45,
+                    ),
+                itemCount: group.items.length,
+                itemBuilder: (context, index) =>
+                    _card(group.items[index]),
+              ),
+            ],
+          );
+        },
+      );
+    },
   );
+
+  Widget _card(Category category) {
+    final active = category.id == selected;
+    final color = colorOf(category.color);
+
+    return GestureDetector(
+      onTap: () => onSelect(category.id),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: active ? AppColors.primary : AppColors.border,
+            width: active ? 2 : 1,
+          ),
+          boxShadow: active ? cardShadow : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(iconOf(category.icon), color: color, size: 26),
+            const Spacer(),
+            Text(
+              category.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w700, height: 1.3),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              slaText(category.slaHours),
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.mutedForeground,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Bitta sarlavha ostidagi yo'nalishlar.
+///
+/// ⚠️ `title` `null` bo'lishi mumkin: ro'yxatda faqat bitta guruh
+/// bo'lsa (kichik yo'nalishlar hali ochilmagan), sarlavha ortiqcha.
+class _CategoryGroup {
+  const _CategoryGroup({required this.title, required this.items});
+
+  final String? title;
+  final List<Category> items;
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -842,8 +927,12 @@ class _ReviewStep extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // ⚠️ ASOSIY YO'NALISH BILAN BIRGA: yakka
+                          // "Ichimlik suvi" kontekstsiz qolardi va
+                          // fuqaro uni "Tozalik" bilan adashtirishi
+                          // mumkin edi.
                           Text(
-                            suggestion.categoryName,
+                            suggestion.fullName,
                             style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                           if (suggestion.orgName != null)

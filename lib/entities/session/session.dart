@@ -101,10 +101,14 @@ class SessionController extends ChangeNotifier {
   Future<void> refresh() async {
     final data = await ApiClient.get('/mobile/me') as Map<String, dynamic>;
     profile = CitizenProfile.fromJson(data);
+    // ⚠️ TELEFON HAM ONBOARDING SHARTI: server telefonsiz
+    // murojaatni RAD ETADI (`mobile.service.ts#create`) va agar
+    // raqam faqat yuborish paytida so'ralsa, fuqaro butun shaklni
+    // to'ldirib bo'lgandan keyin to'siqqa urilardi.
     _set(
-      profile!.hasTerritory
-          ? SessionStatus.ready
-          : SessionStatus.needsTerritory,
+      profile!.needsOnboarding
+          ? SessionStatus.needsTerritory
+          : SessionStatus.ready,
     );
   }
 

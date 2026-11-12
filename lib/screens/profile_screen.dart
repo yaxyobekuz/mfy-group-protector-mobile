@@ -210,9 +210,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Ixtiyoriy — ma\'muriyat qayta aloqa qilishi uchun',
-                      style: TextStyle(
+                    // ⚠️ MATN TALABGA QARAB O'ZGARADI: raqam endi
+                    // MUROJAAT YUBORISH sharti (`Settings.requirePhone`)
+                    // va "ixtiyoriy" deb yozib qo'yish fuqaroni
+                    // chalg'itardi — u raqamsiz murojaat yozmoqchi
+                    // bo'lib, serverdan rad javobini olardi.
+                    Text(
+                      profile.requirePhone
+                          ? 'Murojaat yuborish uchun kerak — xodim shu raqam '
+                                'orqali bog\'lanadi'
+                          : 'Ixtiyoriy — ma\'muriyat qayta aloqa qilishi uchun',
+                      style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.mutedForeground,
                       ),

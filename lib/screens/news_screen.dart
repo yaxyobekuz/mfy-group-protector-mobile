@@ -211,6 +211,34 @@ class _NewsDetail extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(item.body, style: const TextStyle(height: 1.6, fontSize: 15)),
+
+        // ⚠️ GALEREYA MATNDAN KEYIN: e'lonning MAZMUNI matnda
+        // ("ertaga soat 9 da suv o'chadi") va surat uni faqat
+        // TO'LDIRADI. Yuqorida bo'lsa, odam beshta suratni surib
+        // o'tib, matnga yetib bormasdi.
+        //
+        // ⚠️ VIDEO KO'RSATILMAYDI, FAQAT SURAT: `video_player`
+        // paketi ilovada YO'Q va uni faqat shu ekran uchun
+        // qo'shish ilova hajmini sezilarli oshirardi. Video
+        // bo'lsa, fuqaro uni mini-ilovada ko'radi.
+        for (final media in item.media)
+          if (media.kind == 'photo')
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Image.network(
+                  fileUrl(media.url),
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  // ⚠️ XATODA HECH NARSA CHIZILMAYDI: buzuq
+                  // havola uchun qizil "rasm yuklanmadi" belgisi
+                  // e'lonni buzuq ko'rsatardi (muqova bilan ayni
+                  // qoida).
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+              ),
+            ),
       ],
     ),
   );
